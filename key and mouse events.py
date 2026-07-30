@@ -6,7 +6,7 @@ H = 500
 screen = pygame.display.set_mode ((W,H))
 c1 = Circle (250,250,50,15,10,"blue")
 while (True):
-    screen.fill ("white")
+    screen.fill ("blue")
     for event in pygame.event.get ():
         if event.type == pygame.QUIT:
             pygame.quit ()
