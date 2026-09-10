@@ -1,4 +1,5 @@
 import pygame
+import time
 pygame.init ()
 W = 2000
 H = 1000
@@ -11,12 +12,14 @@ yellowship = pygame.transform.scale (yellowship, (250,206.5))
 redship = pygame.transform.rotate (redship,90)
 yellowship = pygame.transform.rotate (yellowship,270)
 screen = pygame.display.set_mode ((W,H))
+font = pygame.font.SysFont("comicsans",40)
 class ship (pygame.sprite.Sprite):
     def __init__ (self,color,x,y):
         super().__init__()
         self.color = color
         self.x = x
         self.y = y
+        self.health = 100
         if self.color == "red":
             self.image = redship
             self.rect = self.image.get_rect ()
@@ -61,13 +64,13 @@ class bullet (pygame.sprite.Sprite):
         self.rect = pygame.Rect (self.x,self.y, 10, 3)
     def update (self):
         if self.color == "red":
-            if self.x >= 2000:
+            if self.rect.x >= 2000:
                 self.kill ()
-            self.x += 1
+            self.rect.x += 1
         if self.color == "yellow":
-            if self.x <= 0:
+            if self.rect.x <= 0:
                 self.kill ()
-            self.x -= 1
+            self.rect.x -= 1
 leftplayer = ship ("red",500,500)         
 rightplayer = ship ("yellow",1500,500)  
 leftshipgroup = pygame.sprite.Group ()     
@@ -83,19 +86,41 @@ while (True):
             pygame.quit ()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_e:
-                redbullet = bullet ("red",leftplayer.x,leftplayer.y)
+                redbullet = bullet ("red",leftplayer.rect.x+100,leftplayer.rect.y+123)
                 redbulletgroup.add (redbullet)
             if event.key == pygame.K_RSHIFT:
-                yellowbullet = bullet ("yellow",rightplayer.x,rightplayer.y)
+                yellowbullet = bullet ("yellow",rightplayer.rect.x,rightplayer.rect.y+123)
                 yellowbulletgroup.add (yellowbullet)
         
     screen.blit (background,(0,0))
+    rtext = font.render (f"Yellow Health: {rightplayer.health}",1,"yellow")
+    ltext = font.render (f"Red Health: {leftplayer.health}",1,"red")
+    screen.blit (ltext, (200,150))
+    screen.blit (rtext, (1500,150))
+    if rightplayer.health <= 0:
+        lwinnertext = font.render ("Yellow Wins!" , 1 , "yellow")
+        screen.blit (lwinnertext,(800,500))
+        pygame.display.update ()
+        time.sleep (5)
+        pygame.quit ()
+    if leftplayer.health <= 0:
+        rwinnertext = font.render ("Red Wins!" , 1 , "red")
+        screen.blit (rwinnertext,(800,500))
+        pygame.display.update ()
+        time.sleep (5)
+        pygame.quit ()
     pygame.draw.rect (screen,"red",mid_border)
     for redbullet in redbulletgroup:
         pygame.draw.rect (screen,"red",redbullet.rect)
+        if redbullet.rect.colliderect (rightplayer.rect):
+            redbulletgroup.remove (redbullet)
+            rightplayer.health -= 1
     redbulletgroup.update ()
     for yellowbullet in yellowbulletgroup:
         pygame.draw.rect (screen, "yellow", yellowbullet.rect)
+        if yellowbullet.rect.colliderect (leftplayer.rect):
+            yellowbulletgroup.remove (yellowbullet)
+            leftplayer.health -=1
     yellowbulletgroup.update ()
     key = pygame.key.get_pressed ()
     leftplayer.move (key)
