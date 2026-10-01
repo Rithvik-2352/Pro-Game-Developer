@@ -1,10 +1,11 @@
 import pygame
+import random
 pygame.init ()
 W = 864
 H = 768
 screen = pygame.display.set_mode ((W,H))
 background = pygame.image.load ("images/flappybackground.png")
-pipe = pygame.image.load ("images/Pipe.png")
+pipeim = pygame.image.load ("images/Pipe.png")
 restart = pygame.image.load ("images/Restart.png")
 birdflapup = pygame.image.load ("images/birdflapu.png")
 birdflapmid = pygame.image.load ("images/birdflapm.png")
@@ -16,6 +17,8 @@ game = False
 images = [birdflapmid, birdflapup, birdflapmid, birdflapdown]
 clock = pygame.time.Clock ()
 flying = True
+score = 0
+font = pygame.font.SysFont ("Bauhaus 93", 40)
 class bird (pygame.sprite.Sprite):
     def __init__ (self, x, y, velo):
         super (). __init__ ()
@@ -31,7 +34,7 @@ class bird (pygame.sprite.Sprite):
     def update (self):
         global game
         if flying == False:
-            self.velo += 0.01
+            self.velo += 0.02
             if self.velo > 5:
                 self.velo = 5
             if self.rect.y  < 570:
@@ -55,27 +58,67 @@ class bird (pygame.sprite.Sprite):
                 self.image = images [self.index]
                 self.rect = self.image.get_rect ()
                 self.rect.center = old_center
-flappy = bird (332,384,5)
+class pipe (pygame.sprite.Sprite):
+    def __init__ (self, x, y, direction, velo):
+        super (). __init__ ()
+        self.x = x
+        self.y = y
+        self.direction = direction
+        self.velo = velo
+        self.image = pipeim
+        self.rect = self.image.get_rect ()
+        if self.direction == "top":
+            self.image = pygame.transform.flip (self.image, False, True)
+            self.rect.bottomleft = (self.x, self.y - 80)
+        if self.direction == "bottom":
+                    self.rect.topleft = (self.x, self.y + 80)
+    def update (self):
+        self.rect.x -= self.velo
+        if self.rect.x <= -10:
+            self.kill ()
+flappy = bird (50,384,5)
 flappygroup = pygame.sprite.Group ()
 flappygroup.add (flappy)
+pipegroup = pygame.sprite.Group ()
+pipe_frequency = 2000
+last_pipe = pygame.time.get_ticks() - pipe_frequency
 while (True):
-    clock.tick (180)
+    clock.tick (220)
     for event in pygame.event.get ():
         if event.type == pygame.QUIT:
             pygame.quit ()
         if event.type == pygame.MOUSEBUTTONDOWN and flying == True:
             game = True
             flying = False
+    if pygame.sprite.groupcollide (flappygroup,pipegroup,False, False):
+        game = False
     if game == True:
+        for p in pipegroup:
+            if p.rect.left < flappy.rect.left:
+                score += 0.5
+                print (p.rect.right)
+                print (flappy.rect.left)
+                p.kill ()
         flappygroup.update ()
         if ground_x >= -432:
             ground_x -= 0.5
         else:
             ground_x = 0
+        time_now = pygame.time.get_ticks ()
+        if time_now - last_pipe >= pipe_frequency:
+            height = random.randint (-100, 100)
+            bottom_pipe = pipe (W, H/2 + height, "bottom", 2)
+            top_pipe = pipe (W, H/2 + height, "top", 2)
+            pipegroup.add (bottom_pipe)
+            pipegroup.add (top_pipe)
+            last_pipe = time_now
+        pipegroup.update ()
     if flappy.rect.y >= 570:
         game = False
-    print (flappy.rect.y)
     screen.blit (background,(0,0))
+    text = font.render (str(round(score,1)),True, "white")
+    screen.blit (text, (50,50))
     screen.blit (ground, (ground_x,600))
     flappygroup.draw (screen)
+    pipegroup.draw (screen)
     pygame.display.update ()
