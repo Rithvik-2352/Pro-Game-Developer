@@ -1,5 +1,6 @@
 import pygame
 import random
+import time
 pygame.init ()
 W = 864
 H = 768
@@ -10,6 +11,9 @@ restart = pygame.image.load ("images/Restart.png")
 birdflapup = pygame.image.load ("images/birdflapu.png")
 birdflapmid = pygame.image.load ("images/birdflapm.png")
 birdflapdown = pygame.image.load ("images/birdflapd.png")
+gameover = pygame.image.load ("images/268-2680778_flappy-bird-game-over-png-transparent-png.png")
+gameover = pygame.transform.scale (gameover,(300,90))
+restart = pygame.image.load ("images/Restart.png")
 ground = pygame.image.load ("images/flappyground.png")
 ground = pygame.transform.scale (ground,(1800,168))
 ground_x = 0
@@ -82,6 +86,8 @@ flappygroup.add (flappy)
 pipegroup = pygame.sprite.Group ()
 pipe_frequency = 2000
 last_pipe = pygame.time.get_ticks() - pipe_frequency
+screen.blit (background,(0,0))
+screen.blit (ground, (ground_x,600))
 while (True):
     clock.tick (220)
     for event in pygame.event.get ():
@@ -90,14 +96,30 @@ while (True):
         if event.type == pygame.MOUSEBUTTONDOWN and flying == True:
             game = True
             flying = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos ()
+            print (pos)
+            if game == False:
+                if 410 <= pos [0] <= 530 and 200 <= pos [1] <= 342:
+                    game = True
+                    flappy.rect.x = 50
+                    flappy.rect.y = 384
+                    pipegroup.empty ()
+                    score = 0
     if pygame.sprite.groupcollide (flappygroup,pipegroup,False, False):
         game = False
+        if game == False:
+            flying = True
+            if flappy.rect.y >= 570:
+                flappy.rect.y -= 0.1
+            else:
+                flappy.rect.y = 570
+            screen.blit (gameover, (400,100))
+            screen.blit (restart, (410,200))
     if game == True:
         for p in pipegroup:
             if p.rect.left < flappy.rect.left:
                 score += 0.5
-                print (p.rect.right)
-                print (flappy.rect.left)
                 p.kill ()
         flappygroup.update ()
         if ground_x >= -432:
@@ -113,12 +135,12 @@ while (True):
             pipegroup.add (top_pipe)
             last_pipe = time_now
         pipegroup.update ()
+        screen.blit (background,(0,0))
+        text = font.render (str(round(score,1)),True, "white")
+        screen.blit (text, (430,50))
+        screen.blit (ground, (ground_x,600))
+        flappygroup.draw (screen)
+        pipegroup.draw (screen)
     if flappy.rect.y >= 570:
         game = False
-    screen.blit (background,(0,0))
-    text = font.render (str(round(score,1)),True, "white")
-    screen.blit (text, (50,50))
-    screen.blit (ground, (ground_x,600))
-    flappygroup.draw (screen)
-    pipegroup.draw (screen)
-    pygame.display.update ()
+    pygame.display.flip ()
